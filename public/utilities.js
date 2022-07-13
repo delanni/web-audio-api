@@ -6,6 +6,10 @@ function chainNodes(...nodes) {
     nodes[i].connect(nodes[i].context.destination);
 }
 
+function chance(n) {
+    return Math.random() < n;
+}
+
 function createPatternSequencer(bpm, pattern, callback) {
     const msPerBeat = (60000 / bpm);
     const msPerQuarterNote = msPerBeat / 4;
@@ -13,11 +17,7 @@ function createPatternSequencer(bpm, pattern, callback) {
     const intervalId = setInterval(() => {
         const value = pattern[unit % pattern.length];
         if (value) {
-            if (typeof value === 'number') {
-                callback(unit, (value * msPerQuarterNote) / 1000, msPerQuarterNote);
-            } else {
-                callback(unit, value, msPerQuarterNote);
-            }
+            callback(unit, value, msPerQuarterNote / 1000);
         }
 
         unit = unit + 1;
@@ -159,6 +159,8 @@ function createTwoOscillatorDevice(audioCtx, _params = {}) {
         oscillator2,
         envelopeGenerator1,
         envelopeGenerator2,
+        stereoPanner1,
+        stereoPanner2,
         masterGain,
         filterNode,
         triggerEnvelope,

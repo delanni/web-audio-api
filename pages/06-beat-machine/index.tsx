@@ -40,6 +40,7 @@ const BeatMachine: NextPage = () => {
         noiseMix: 0.2,
         pitchMax: 300,
         pitchMin: 30,
+        gainRelease: 0.1,
         oscillatorType: "triangle"
       }
     });
@@ -55,13 +56,13 @@ const BeatMachine: NextPage = () => {
 
         noiseMix: 0.6,
 
-        gainRelease: 0.1,
-        oscillatorType: "sawtooth"
+        gainRelease: 0.05,
+        oscillatorType: "square"
       }
     });
     const hihatFilter = audioCtx.createBiquadFilter();
     hihatFilter.type = "highpass";
-    hihatFilter.frequency.value = 8000;
+    hihatFilter.frequency.value = 10000;
     hiHat.masterGain.connect(hihatFilter);
 
     const compressor = audioCtx.createDynamicsCompressor();
@@ -80,7 +81,7 @@ const BeatMachine: NextPage = () => {
 
     compressor.connect(audioCtx.destination);
 
-    const BPM = 130;
+    const BPM = 140;
 
     // Trigger one hit on the oscillator
     document.getElementById('btn').onclick = () => {
@@ -128,10 +129,10 @@ const BeatMachine: NextPage = () => {
         // 3, 0, 0, 0,
         // 1, 0, 1, 0,
         //
-        // 3, 0, 0, 0,
-        // 3, 0, 0, 0,
-        // 3, 0, 0, 0,
-        // 1, 0, 1, 0,
+        // 0, 1, 0, 1,
+        // 0, 0, 2, 0,
+        // 0, 1, 0, 1,
+        // 4, 0, 0, 0,
         //
         // 3, 0, 0, 0,
         // 3, 0, 0, 0,
@@ -142,9 +143,9 @@ const BeatMachine: NextPage = () => {
         // 3, 0, 0, 0,
         // 6, 0, 0, 0,
         // 0, 0, 0, 0,
-      ], (count, envLength) => {
+      ], (count, value, unitLength) => {
         const time = audioCtx.currentTime;
-        synth1.triggerEnvelope(time, "A", envLength);
+        synth1.triggerEnvelope(time, "A", value * unitLength);
       });
 
       const notes = ["A4", "C5", "A5", "D4", "F4"];
@@ -158,10 +159,10 @@ const BeatMachine: NextPage = () => {
         1, 0, 2, 0, 0, 0,
         1, 0, 2, 0, 0, 0,
         1, 0, 2, 0, 1, 1,
-      ], (count, envLength) => {
+      ], (count, value, envLength) => {
         const time = audioCtx.currentTime;
 
-        synth2.triggerEnvelope(time, notes[currentNoteIdx % notes.length], envLength);
+        synth2.triggerEnvelope(time, notes[currentNoteIdx % notes.length], value * envLength);
 
         if (Math.random() > 0.1) {
           currentNoteIdx++;
@@ -234,11 +235,11 @@ const BeatMachine: NextPage = () => {
     onUpdate: dispatchOnWindow("update-hihat-level")
   });
 
-  const hihatRelease = useSmartState(.1, {
+  const hihatRelease = useSmartState(0.1, {
     onUpdate: dispatchOnWindow("update-hihat-release")
   });
 
-  const hihatCutoff = useSmartState<number>(8000, {
+  const hihatCutoff = useSmartState<number>(10000, {
     valueToInput: (val) => Math.log10(val / 2),
     inputToValue: (input) => Math.floor(2 * Math.pow(10, input)),
     onUpdate: dispatchOnWindow("update-hihat-cutoff")
