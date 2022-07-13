@@ -14,3 +14,41 @@ a {
 * {
   box-sizing: border-box;
 }
+
+.footer {
+    position: fixed;
+    bottom: 0px;
+    background: red;
+    width: 100%;
+}
+
+.device {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    border: 2px solid #b14a4a;
+    margin: 2px;
+    background: #e5bbbb;
+}
+
+.device header {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    border-bottom: 2px #0070f3 solid;
+    justify-content: center;
+}
+
+.device section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.device input {
+    width: 100%;
+}
