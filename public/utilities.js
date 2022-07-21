@@ -463,3 +463,9 @@ function addEventListeners(map) {
         }
     });
 }
+
+function startDrawing(analyserNode, eventName = "start-drawing") {
+    const e = new Event(eventName);
+    e.detail = analyserNode;
+    window.dispatchEvent(e);
+}

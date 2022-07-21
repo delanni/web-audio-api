@@ -1,8 +1,7 @@
 import { NextPage } from "next";
 import EditorSplitView from "../../components/EditorSplitView";
 import useSmartState from "../../utils/smartState";
-import { useEffect } from "react";
-import { drawFFTBins, drawWaveform } from "../../utils/visualization";
+import { dispatchOnWindow, useAnalysis } from "../utils";
 
 const SequencingAndAutomation: NextPage = () => {
   // language=HTML
@@ -33,9 +32,9 @@ const SequencingAndAutomation: NextPage = () => {
 
     // Start the oscillator in the background
     oscillator.start();
-    const e = new Event('start-drawing');
-    e.detail = analyserNode;
-    window.dispatchEvent(e);
+    
+    // start drawing the analysis
+    startDrawing(analyserNode);
 
     // bind the dial updates from react to the audio nodes:
     window.addEventListener("update-waveform", (e) => {
@@ -102,41 +101,11 @@ const SequencingAndAutomation: NextPage = () => {
     onUpdate: dispatchOnWindow("update-gain")
   });
 
-  useEffect(() => {
-    let shouldDraw = true;
-
-    const analysisKindSelector = document.getElementById("analysis-kind-selector") as HTMLSelectElement;
-    const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-    const canvasCtx = canvas.getContext("2d") as CanvasRenderingContext2D;
-
-    const draw = (e: Event) => {
-      const analyserNode = (e as UpdateEvent).detail;
-      if (!shouldDraw) {
-        return;
-      } else {
-        window.requestAnimationFrame(() => draw(e));
-      }
-
-      if (analysisKindSelector.value === "frequency") {
-        const bufferLength = analyserNode.frequencyBinCount;
-        const data = new Uint8Array(bufferLength);
-        analyserNode.getByteFrequencyData(data);
-        drawFFTBins(canvas, canvasCtx, data);
-      } else {
-        const bufferLength = analyserNode.frequencyBinCount;
-        const data = new Uint8Array(bufferLength);
-        analyserNode.getByteTimeDomainData(data);
-        drawWaveform(canvas, canvasCtx, data);
-      }
-    };
-
-    window.addEventListener("start-drawing", draw);
-
-    return () => {
-      shouldDraw = false;
-      window.removeEventListener("start-drawing", draw);
-    };
-  }, []);
+  useAnalysis({
+    canvasId: "canvas",
+     startDrawEventName: "start-drawing",
+    analysisKindSelectorId: "analysis-kind-selector"
+  });
 
   return <EditorSplitView code={code} html={html} runCodeOnLoad={true}>
     <div>
@@ -189,21 +158,5 @@ const SequencingAndAutomation: NextPage = () => {
 
   </EditorSplitView>;
 };
-
-class UpdateEvent extends Event {
-  public detail: any;
-
-  constructor(type: string, public value: any) {
-    super(type);
-    this.detail = value;
-  }
-}
-
-function dispatchOnWindow(functionName: string) {
-  return (value: unknown) => {
-    const ev = new UpdateEvent(functionName, value);
-    (window as any).dispatchEvent(ev);
-  };
-}
 
 export default SequencingAndAutomation;

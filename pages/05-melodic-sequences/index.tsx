@@ -1,6 +1,7 @@
 import { NextPage } from "next";
 import EditorSplitView from "../../components/EditorSplitView";
 import useSmartState from "../../utils/smartState";
+import { dispatchOnWindow, useAnalysis } from "../utils";
 
 const MelodicSequences: NextPage = () => {
   // language=HTML
@@ -49,8 +50,13 @@ const MelodicSequences: NextPage = () => {
     reverb.connect(wetGain);
     gainNode.connect(dryGain);
 
-    dryGain.connect(audioCtx.destination);
-    wetGain.connect(audioCtx.destination);
+    const analyserNode = audioCtx.createAnalyser(); // create an analyser node
+    analyserNode.fftSize = 2 ** 12; // set the fft size to a power of 2, for visualisation
+        
+    dryGain.connect(analyserNode);
+    wetGain.connect(analyserNode);
+    
+    analyserNode.connect(audioCtx.destination);
 
     // Trigger one hit on the oscillator
     document.getElementById('btn').onclick = () => {
@@ -96,7 +102,8 @@ const MelodicSequences: NextPage = () => {
       }
     }
 
-    // Start the oscillator in the background
+    // start drawing the analysis
+    startDrawing(analyserNode);
 
     window.addEventListener("update-cutoff", (e) => {
       filterNode.frequency.value = e.detail;
@@ -161,6 +168,12 @@ const MelodicSequences: NextPage = () => {
     onUpdate: dispatchOnWindow("update-wetness")
   });
 
+  const selectedAnalysisKind = useSmartState<string>("frequency", {
+    onUpdate: dispatchOnWindow("update-analysis-kind")
+  });
+
+  useAnalysis();
+
   return <EditorSplitView code={code} html={html} runCodeOnLoad={true}>
     <button id="shuffle-oscillators">Shuffle oscillators</button>
 
@@ -202,23 +215,15 @@ const MelodicSequences: NextPage = () => {
     </div>
 
     <button id="btn">Beep!</button>
+
+    <select id="analysis-kind-selector" value={selectedAnalysisKind.value}
+            onChange={selectedAnalysisKind.update}>
+      <option value="frequency">Frequency / FFT</option>
+      <option value="time">Time / Waveform</option>
+    </select>
+    <canvas id="canvas" width="1024" height="400"></canvas>
+
   </EditorSplitView>;
 };
-
-class UpdateEvent extends Event {
-  public detail: any;
-
-  constructor(type: string, public value: any) {
-    super(type);
-    this.detail = value;
-  }
-}
-
-function dispatchOnWindow(functionName: string) {
-  return (value: unknown) => {
-    const ev = new UpdateEvent(functionName, value);
-    (window as any).dispatchEvent(ev);
-  };
-}
 
 export default MelodicSequences;

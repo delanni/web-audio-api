@@ -1,6 +1,7 @@
 import { NextPage } from "next";
 import EditorSplitView from "../../components/EditorSplitView";
 import useSmartState from "../../utils/smartState";
+import { dispatchOnWindow, useAnalysis } from "../utils";
 
 const BeatMachine: NextPage = () => {
   // language=HTML
@@ -78,8 +79,12 @@ const BeatMachine: NextPage = () => {
 
     synth1.masterGain.connect(compressor);
     synth2.masterGain.connect(compressor);
+    
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 2048;
+    compressor.connect(analyser);
 
-    compressor.connect(audioCtx.destination);
+    analyser.connect(audioCtx.destination);
 
     const BPM = 140;
 
@@ -190,6 +195,8 @@ const BeatMachine: NextPage = () => {
         hiHat.params.gainRelease = v;
       }
     });
+    
+    startDrawing(analyser);
 
     /* CLEANUP */
     audioCtx.close();
@@ -244,6 +251,12 @@ const BeatMachine: NextPage = () => {
     inputToValue: (input) => Math.floor(2 * Math.pow(10, input)),
     onUpdate: dispatchOnWindow("update-hihat-cutoff")
   });
+
+  const selectedAnalysisKind = useSmartState<string>("frequency", {
+    onUpdate: dispatchOnWindow("update-analysis-kind")
+  });
+
+  useAnalysis();
 
   return <EditorSplitView code={code} html={html} runCodeOnLoad={true}>
 
@@ -349,23 +362,17 @@ const BeatMachine: NextPage = () => {
 
 
     <button id="btn">Start!</button>
+
+    <div>
+      <select id="analysis-kind-selector" value={selectedAnalysisKind.value}
+              onChange={selectedAnalysisKind.update}>
+        <option value="frequency">Frequency / FFT</option>
+        <option value="time">Time / Waveform</option>
+      </select>
+      <canvas id="canvas" width="1024" height="300"></canvas>
+    </div>
+
   </EditorSplitView>;
 };
-
-class UpdateEvent extends Event {
-  public detail: any;
-
-  constructor(type: string, public value: any) {
-    super(type);
-    this.detail = value;
-  }
-}
-
-function dispatchOnWindow(functionName: string) {
-  return (value: unknown) => {
-    const ev = new UpdateEvent(functionName, value);
-    (window as any).dispatchEvent(ev);
-  };
-}
 
 export default BeatMachine;

@@ -52,3 +52,7 @@ a {
 .device input {
     width: 100%;
 }
+
+input[type="range"] {
+    width: 300px;
+}
